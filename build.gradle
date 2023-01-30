@@ -39,6 +39,7 @@ dependencies {
 	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
 
 	// modImplementation "net.fabricmc.fabric-api:fabric-api-deprecated:${project.fabric_version}"
+	include 'art.arcane:MultiBurst:22.9.2'
 	implementation 'art.arcane:MultiBurst:22.9.2'
 	implementation 'org.zeroturnaround:zt-zip:1.15'
 	implementation 'org.apache.commons:commons-compress:1.22'
