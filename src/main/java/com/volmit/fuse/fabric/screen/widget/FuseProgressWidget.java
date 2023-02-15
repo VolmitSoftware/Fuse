@@ -27,7 +27,7 @@ public class FuseProgressWidget extends DrawableHelper implements Drawable, Elem
 
     @Override
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
-        if(getProgress() >= 1 || getProgress() <= 0) {
+        if (getProgress() >= 1 || getProgress() <= 0) {
             return;
         }
 

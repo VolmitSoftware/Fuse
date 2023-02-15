@@ -71,6 +71,22 @@ public class Project {
                 e.printStackTrace();
             }
         }
+
+        Fuse.err("Missing gradle file. Checking parent directory for gradle-wrapper.properties");
+
+        gradleWrapperConfig = new File(new File(location).getParentFile(), "gradle/wrapper/gradle-wrapper.properties");
+        if(gradleWrapperConfig.exists()) {
+            try {
+                String[] lines = Files.readAllLines(gradleWrapperConfig.toPath()).toArray(new String[0]);
+                for(String i : lines) {
+                    if(i.startsWith("distributionUrl=")) {
+                        return i.split("=")[1].replaceAll("\\Q\\\\E", "");
+                    }
+                }
+            } catch(Throwable e) {
+                e.printStackTrace();
+            }
+        }
         return null;
     }
 

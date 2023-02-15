@@ -6,11 +6,7 @@
 package com.volmit.fuse.fabric.util;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class FolderWatcher extends FileWatcher {
     private Map<File, FolderWatcher> watchers;
@@ -23,29 +19,24 @@ public class FolderWatcher extends FileWatcher {
     }
 
     protected void readProperties() {
-        if(this.watchers == null) {
-            this.watchers = new HashMap();
-            this.changed = new ArrayList();
-            this.created = new ArrayList();
-            this.deleted = new ArrayList();
+        if (this.watchers == null) {
+            this.watchers = new HashMap<>();
+            this.changed = new ArrayList<>();
+            this.created = new ArrayList<>();
+            this.deleted = new ArrayList<>();
         }
 
-        if(this.file.isDirectory()) {
+        if (this.file.isDirectory()) {
             File[] var1 = this.file.listFiles();
-            int var2 = var1.length;
 
-            for(int var3 = 0; var3 < var2; ++var3) {
-                File i = var1[var3];
-                if(!this.watchers.containsKey(i)) {
+            for (File i : var1) {
+                if (!this.watchers.containsKey(i)) {
                     this.watchers.put(i, new FolderWatcher(i));
                 }
             }
 
-            Iterator<File> var5 = new ArrayList<>(this.watchers.keySet()).iterator();
-
-            while(var5.hasNext()) {
-                File i = var5.next();
-                if(!i.exists()) {
+            for (File i : new ArrayList<>(this.watchers.keySet())) {
+                if (!i.exists()) {
                     this.watchers.remove(i);
                 }
             }
@@ -59,31 +50,30 @@ public class FolderWatcher extends FileWatcher {
         this.changed.clear();
         this.created.clear();
         this.deleted.clear();
-        if(!this.file.isDirectory()) {
+        if (!this.file.isDirectory()) {
             return super.checkModified();
         } else {
-            Map<File, FolderWatcher> w = new HashMap<>();
-            w.putAll(this.watchers);
+            Map<File, FolderWatcher> w = new HashMap<>(this.watchers);
             this.readProperties();
-            Iterator var2 = w.keySet().iterator();
+            Iterator<File> var2 = w.keySet().iterator();
 
             File i;
-            while(var2.hasNext()) {
-                i = (File) var2.next();
-                if(!this.watchers.containsKey(i)) {
+            while (var2.hasNext()) {
+                i = var2.next();
+                if (!this.watchers.containsKey(i)) {
                     this.deleted.add(i);
                 }
             }
 
             var2 = this.watchers.keySet().iterator();
 
-            while(var2.hasNext()) {
-                i = (File) var2.next();
-                if(!w.containsKey(i)) {
+            while (var2.hasNext()) {
+                i = var2.next();
+                if (!w.containsKey(i)) {
                     this.created.add(i);
                 } else {
                     FolderWatcher fw = this.watchers.get(i);
-                    if(fw.checkModified()) {
+                    if (fw.checkModified()) {
                         this.changed.add(fw.file);
                     }
 
@@ -98,19 +88,17 @@ public class FolderWatcher extends FileWatcher {
     }
 
     public boolean checkModifiedFast() {
-        if(this.watchers != null && !this.watchers.isEmpty()) {
+        if (this.watchers != null && !this.watchers.isEmpty()) {
             this.changed.clear();
             this.created.clear();
             this.deleted.clear();
-            if(!this.file.isDirectory()) {
+            if (!this.file.isDirectory()) {
                 return super.checkModified();
             } else {
-                Iterator var1 = this.watchers.keySet().iterator();
 
-                while(var1.hasNext()) {
-                    File i = (File) var1.next();
+                for (File i : this.watchers.keySet()) {
                     FolderWatcher fw = this.watchers.get(i);
-                    if(fw.checkModifiedFast()) {
+                    if (fw.checkModifiedFast()) {
                         this.changed.add(fw.file);
                     }
 

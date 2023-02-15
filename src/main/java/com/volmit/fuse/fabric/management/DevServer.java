@@ -5,8 +5,6 @@ import com.volmit.fuse.fabric.management.data.Project;
 import com.volmit.fuse.fabric.util.Looper;
 import com.volmit.fuse.fabric.util.ProcessRelogger;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.toast.SystemToast;
-import net.minecraft.text.Text;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -18,19 +16,17 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class DevServer extends Thread {
-    private OutputStream output;
-    private PrintWriter outputWriter;
     private final Runnable onStarted;
     private final Consumer<String> serverLog;
+    private PrintWriter outputWriter;
     private String player;
     private boolean closeClient = false;
     private Process process;
-    private final Looper looper;
 
     public DevServer(Runnable onStarted) {
         this.onStarted = onStarted;
         this.serverLog = this::onServerLog;
-        looper = new Looper() {
+        Looper looper = new Looper() {
             @Override
             protected long loop() {
                 serverCommand("fuse keepalive");
@@ -59,22 +55,22 @@ public class DevServer extends Thread {
     }
 
     private void onServerLog(String line) {
-        if(line.contains("Done") && line.contains("s)! For help, type \"help\"")) {
+        if (line.contains("Done") && line.contains("s)! For help, type \"help\"")) {
             onServerOnline();
         }
 
-        if(line.contains(player + " issued server command: /")) {
+        if (line.contains(player + " issued server command: /")) {
             onPlayerCommand(line.split("\\Q" + player + " issued server command: /\\E")[1]);
         }
 
-        if(line.endsWith("left the game")) {
+        if (line.endsWith("left the game")) {
             onPlayerLeft();
         }
 
-        if(line.endsWith("joined the game")) {
+        if (line.endsWith("joined the game")) {
             String player = "";
-            for(String i : line.split("\\Q \\E")) {
-                if(i.endsWith("joined")) {
+            for (String i : line.split("\\Q \\E")) {
+                if (i.endsWith("joined")) {
                     serverCommand("op " + player);
                     this.player = player;
                     onPlayerJoined(player);
@@ -102,14 +98,14 @@ public class DevServer extends Thread {
     public void onPlayerCommand(String command) {
         Fuse.log("Player Command: " + command);
 
-        if(command.equalsIgnoreCase("crash")) {
+        if (command.equalsIgnoreCase("crash")) {
             stopServer();
             closeClient = true;
         }
     }
 
     public void serverCommand(String command) {
-        if(outputWriter != null) {
+        if (outputWriter != null) {
             outputWriter.println(command);
             outputWriter.flush();
         }
@@ -121,11 +117,11 @@ public class DevServer extends Thread {
 
     public void stopServer() {
         serverCommand("stop");
-        if(process != null) {
+        if (process != null) {
             try {
                 process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
                 process.destroy();
-            } catch(InterruptedException e) {
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -152,25 +148,24 @@ public class DevServer extends Thread {
         try {
             new File(Fuse.service.getServerFolder(), "STOPPER").mkdirs();
             Process p = new ProcessBuilder()
-                .command(args.toArray(new String[0]))
-                .directory(Fuse.service.getServerFolder())
-                .start();
+                    .command(args.toArray(new String[0]))
+                    .directory(Fuse.service.getServerFolder())
+                    .start();
             Runtime.getRuntime().addShutdownHook(new Thread(p::destroy));
             new ProcessRelogger(p.getInputStream(), false, serverLog).start();
             new ProcessRelogger(p.getErrorStream(), false, serverLog).start();
-            output = p.getOutputStream();
+            OutputStream output = p.getOutputStream();
             outputWriter = new PrintWriter(output);
             process = p;
             int code = p.waitFor();
-            p = null;
             Fuse.log("Process Exited With Code " + code);
 
-            if(closeClient) {
+            if (closeClient) {
                 Fuse.service.close();
                 MinecraftClient.getInstance().stop();
             }
 
-        } catch(IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

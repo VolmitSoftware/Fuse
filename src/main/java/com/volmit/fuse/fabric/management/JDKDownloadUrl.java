@@ -18,27 +18,27 @@ public enum JDKDownloadUrl {
         this.url = url;
     }
 
-    public String getUrl() {
-        return url.replaceAll("\\Q$version\\E", VERSION)
-            .replaceAll("\\Q$hash\\E", HASH)
-            .replaceAll("\\Q$code\\E", CODE);
-    }
-
     public static String getAutoUrl() {
-        if(SystemUtils.IS_OS_WINDOWS) {
+        if (SystemUtils.IS_OS_WINDOWS) {
             return WINDOWS.getUrl();
-        } else if(SystemUtils.IS_OS_MAC) {
-            if(System.getProperty("os.arch").equals("amd64")) {
+        } else if (SystemUtils.IS_OS_MAC) {
+            if (System.getProperty("os.arch").equals("amd64")) {
                 return MAC.getUrl();
             }
             return MAC_ARM.getUrl();
-        } else if(SystemUtils.IS_OS_LINUX) {
-            if(System.getProperty("os.arch").equals("amd64")) {
+        } else if (SystemUtils.IS_OS_LINUX) {
+            if (System.getProperty("os.arch").equals("amd64")) {
                 return LINUX.getUrl();
             }
             return LINUX_ARM.getUrl();
         }
 
         return null;
+    }
+
+    public String getUrl() {
+        return url.replaceAll("\\Q$version\\E", VERSION)
+                .replaceAll("\\Q$hash\\E", HASH)
+                .replaceAll("\\Q$code\\E", CODE);
     }
 }

@@ -15,11 +15,11 @@ public class JobExecutor {
     @Getter
     private final MultiBurst burst;
     private final List<Runnable> queue;
+    private final List<Runnable> after;
+    private Looper progressUpdater;
     private int queued;
     private int completed;
     private boolean draining;
-    private Looper progressUpdater;
-    private final List<Runnable> after;
 
     public JobExecutor() {
         this.queue = new CopyOnWriteArrayList<>();
@@ -31,7 +31,7 @@ public class JobExecutor {
     }
 
     public double getProgress() {
-        if(getQueued() <= 0) {
+        if (getQueued() <= 0) {
             return 0;
         }
 
@@ -56,7 +56,7 @@ public class JobExecutor {
         queue.add(r);
         queued = queued + 1;
 
-        if(!draining) {
+        if (!draining) {
             draining = true;
             burst.lazy(this::drain);
         }
@@ -71,10 +71,10 @@ public class JobExecutor {
             b.set(true);
         });
 
-        while(!b.get()) {
+        while (!b.get()) {
             try {
                 Thread.sleep(50);
-            } catch(InterruptedException e) {
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -89,7 +89,7 @@ public class JobExecutor {
         progressUpdater = new Looper() {
             @Override
             protected long loop() {
-                if(System.currentTimeMillis() - Fuse.ll > 10000) {
+                if (System.currentTimeMillis() - Fuse.ll > 10000) {
                     tickProgress();
                     return 10000;
                 }
@@ -99,16 +99,16 @@ public class JobExecutor {
         };
         progressUpdater.start();
 
-        while(!queue.isEmpty()) {
+        while (!queue.isEmpty()) {
             List<Runnable> q = new ArrayList<>(queue).stream().map((i) -> (Runnable) () -> {
-                    try {
-                        i.run();
-                    } catch(Throwable e) {
-                        e.printStackTrace();
-                        Fuse.err("Failed to execute job!");
+                        try {
+                            i.run();
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                            Fuse.err("Failed to execute job!");
+                        }
+                        completed = completed + 1;
                     }
-                    completed = completed + 1;
-                }
             ).collect(Collectors.toList());
             queue.clear();
             burst.burst(q);
@@ -116,7 +116,6 @@ public class JobExecutor {
 
         progressUpdater.interrupt();
         tickProgress();
-        int cc = getCompleted();
 
         MultiBurst.burst.lazy(() -> {
             Fuse.log("Work Completed. " + getCompleted() + " jobs completed.");
@@ -126,7 +125,7 @@ public class JobExecutor {
         queued = 0;
         draining = false;
 
-        if(!after.isEmpty()) {
+        if (!after.isEmpty()) {
             List<Runnable> a = new ArrayList<>(after);
             after.clear();
             a.forEach(Runnable::run);

@@ -7,9 +7,6 @@ package com.volmit.fuse.fabric.screen.widget;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -21,20 +18,31 @@ import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 @Environment(EnvType.CLIENT)
 public class FuseToast implements Toast {
     private static final int MIN_WIDTH = 200;
     private static final int LINE_HEIGHT = 12;
     private static final int PADDING_Y = 10;
     private final Type type;
+    private final int width;
     private Text title;
     private List<OrderedText> lines;
     private long startTime;
     private boolean justUpdated;
-    private final int width;
 
     public FuseToast(Type type, Text title, @Nullable Text description) {
         this(type, title, getTextAsList(description), Math.max(160, 30 + Math.max(MinecraftClient.getInstance().textRenderer.getWidth(title), description == null ? 0 : MinecraftClient.getInstance().textRenderer.getWidth(description))));
+    }
+
+    private FuseToast(Type type, Text title, List<OrderedText> lines, int width) {
+        this.type = type;
+        this.title = title;
+        this.lines = lines;
+        this.width = width;
     }
 
     public static FuseToast create(MinecraftClient client, Type type, Text title, Text description) {
@@ -46,15 +54,34 @@ public class FuseToast implements Toast {
         return new FuseToast(type, title, list, i + 30);
     }
 
-    private FuseToast(Type type, Text title, List<OrderedText> lines, int width) {
-        this.type = type;
-        this.title = title;
-        this.lines = lines;
-        this.width = width;
-    }
-
     private static ImmutableList<OrderedText> getTextAsList(@Nullable Text text) {
         return text == null ? ImmutableList.of() : ImmutableList.of(text.asOrderedText());
+    }
+
+    public static void add(ToastManager manager, Type type, Text title, @Nullable Text description) {
+        manager.add(new FuseToast(type, title, description));
+    }
+
+    public static void show(ToastManager manager, Type type, Text title, @Nullable Text description) {
+        FuseToast fuseToast = (FuseToast) manager.getToast(FuseToast.class, type);
+        if (fuseToast == null) {
+            add(manager, type, title, description);
+        } else {
+            fuseToast.setContent(title, description);
+        }
+
+    }
+
+    public static void addWorldAccessFailureToast(MinecraftClient client, String worldName) {
+        add(client.getToastManager(), FuseToast.Type.WORLD_ACCESS_FAILURE, Text.translatable("selectWorld.access_failure"), Text.literal(worldName));
+    }
+
+    public static void addWorldDeleteFailureToast(MinecraftClient client, String worldName) {
+        add(client.getToastManager(), FuseToast.Type.WORLD_ACCESS_FAILURE, Text.translatable("selectWorld.delete_failure"), Text.literal(worldName));
+    }
+
+    public static void addPackCopyFailure(MinecraftClient client, String directory) {
+        add(client.getToastManager(), FuseToast.Type.PACK_COPY_FAILURE, Text.translatable("pack.copyFailure"), Text.literal(directory));
     }
 
     public int getWidth() {
@@ -82,7 +109,7 @@ public class FuseToast implements Toast {
             int l = Math.min(4, j - 28);
             this.drawPart(matrices, manager, i, 0, 0, 28);
 
-            for(int m = 28; m < j - l; m += 10) {
+            for (int m = 28; m < j - l; m += 10) {
                 this.drawPart(matrices, manager, i, 16, m, Math.min(16, j - m - l));
             }
 
@@ -94,8 +121,8 @@ public class FuseToast implements Toast {
         } else {
             manager.getClient().textRenderer.draw(matrices, this.title, 18.0F, 7.0F, -256);
 
-            for(j = 0; j < this.lines.size(); ++j) {
-                manager.getClient().textRenderer.draw(matrices, (OrderedText)this.lines.get(j), 18.0F, (float)(18 + j * 12), -1);
+            for (j = 0; j < this.lines.size(); ++j) {
+                manager.getClient().textRenderer.draw(matrices, (OrderedText) this.lines.get(j), 18.0F, (float) (18 + j * 12), -1);
             }
         }
 
@@ -107,7 +134,7 @@ public class FuseToast implements Toast {
         int j = Math.min(60, width - i);
         manager.drawTexture(matrices, 0, y, 0, 64 + textureV, i, height);
 
-        for(int k = i; k < width - j; k += 64) {
+        for (int k = i; k < width - j; k += 64) {
             manager.drawTexture(matrices, k, y, 32, 64 + textureV, Math.min(64, width - k - j), height);
         }
 
@@ -122,32 +149,6 @@ public class FuseToast implements Toast {
 
     public Type getType() {
         return this.type;
-    }
-
-    public static void add(ToastManager manager, Type type, Text title, @Nullable Text description) {
-        manager.add(new FuseToast(type, title, description));
-    }
-
-    public static void show(ToastManager manager, Type type, Text title, @Nullable Text description) {
-        FuseToast fuseToast = (FuseToast)manager.getToast(FuseToast.class, type);
-        if (fuseToast == null) {
-            add(manager, type, title, description);
-        } else {
-            fuseToast.setContent(title, description);
-        }
-
-    }
-
-    public static void addWorldAccessFailureToast(MinecraftClient client, String worldName) {
-        add(client.getToastManager(), FuseToast.Type.WORLD_ACCESS_FAILURE, Text.translatable("selectWorld.access_failure"), Text.literal(worldName));
-    }
-
-    public static void addWorldDeleteFailureToast(MinecraftClient client, String worldName) {
-        add(client.getToastManager(), FuseToast.Type.WORLD_ACCESS_FAILURE, Text.translatable("selectWorld.delete_failure"), Text.literal(worldName));
-    }
-
-    public static void addPackCopyFailure(MinecraftClient client, String directory) {
-        add(client.getToastManager(), FuseToast.Type.PACK_COPY_FAILURE, Text.translatable("pack.copyFailure"), Text.literal(directory));
     }
 
     @Environment(EnvType.CLIENT)

@@ -9,7 +9,6 @@ import java.io.File;
 
 public class FileWatcher {
     protected final File file;
-    private boolean exists;
     private long lastModified;
     private long size;
 
@@ -19,9 +18,9 @@ public class FileWatcher {
     }
 
     protected void readProperties() {
-        this.exists = this.file.exists();
-        this.lastModified = this.exists ? this.file.lastModified() : -1L;
-        this.size = this.exists ? (this.file.isDirectory() ? -2L : this.file.length()) : -1L;
+        boolean exists = this.file.exists();
+        this.lastModified = exists ? this.file.lastModified() : -1L;
+        this.size = exists ? (this.file.isDirectory() ? -2L : this.file.length()) : -1L;
     }
 
     public boolean checkModified() {
@@ -29,7 +28,7 @@ public class FileWatcher {
         long g = this.size;
         boolean mod = false;
         this.readProperties();
-        if(this.lastModified != m || g != this.size) {
+        if (this.lastModified != m || g != this.size) {
             mod = true;
         }
 

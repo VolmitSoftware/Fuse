@@ -14,7 +14,6 @@ import javafx.stage.DirectoryChooser;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.world.WorldListWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.util.math.MatrixStack;
@@ -28,14 +27,14 @@ import java.util.Optional;
 
 @Environment(EnvType.CLIENT)
 public class WorkspaceScreen extends Screen {
-    private static final Logger LOGGER = LogUtils.getLogger();
     public static final GeneratorOptions DEBUG_GENERATOR_OPTIONS = new GeneratorOptions("test1".hashCode(), true, false);
+    private static final Logger LOGGER = LogUtils.getLogger();
     protected final Screen parent;
+    protected TextFieldWidget searchBox;
     private ButtonWidget unlinkButton;
     private ButtonWidget launchButton;
     private ButtonWidget editButton;
     private ButtonWidget settingsButton;
-    protected TextFieldWidget searchBox;
     private WorkspaceListWidget levelList;
 
     public WorkspaceScreen(Screen parent) {
@@ -96,8 +95,7 @@ public class WorkspaceScreen extends Screen {
     private File chooseDirectory() {
         DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Select Project Directory");
-        File selectedDirectory = chooser.showDialog(null);
-        return selectedDirectory;
+        return chooser.showDialog(null);
     }
 
     private Optional<WorkspaceListWidget.WorkspaceEntry> getSelectedAsOptional() {

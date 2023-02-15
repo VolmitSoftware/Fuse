@@ -5,54 +5,36 @@
 
 package com.volmit.fuse.fabric.screen.widget;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.hash.Hashing;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
 import com.volmit.fuse.fabric.Fuse;
 import com.volmit.fuse.fabric.management.data.Project;
 import com.volmit.fuse.fabric.screen.WorkspaceScreen;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.screen.FatalErrorScreen;
 import net.minecraft.client.gui.screen.LoadingDisplay;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.screen.world.WorldListWidget;
 import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
 import net.minecraft.client.gui.widget.EntryListWidget;
-import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
-import net.minecraft.util.crash.CrashReport;
-import net.minecraft.world.level.storage.LevelStorage;
-import net.minecraft.world.level.storage.LevelStorageException;
-import net.minecraft.world.level.storage.LevelSummary;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
 @Environment(EnvType.CLIENT)
 public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<WorkspaceListWidget.Entry> {
@@ -66,11 +48,21 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     static final Text SNAPSHOT_SECOND_LINE;
     static final Text LOCKED_TEXT;
     static final Text CONVERSION_TOOLTIP;
+
+    static {
+        FROM_NEWER_VERSION_FIRST_LINE = Text.translatable("selectWorld.tooltip.fromNewerVersion1").formatted(Formatting.RED);
+        FROM_NEWER_VERSION_SECOND_LINE = Text.translatable("selectWorld.tooltip.fromNewerVersion2").formatted(Formatting.RED);
+        SNAPSHOT_FIRST_LINE = Text.translatable("selectWorld.tooltip.snapshot1").formatted(Formatting.GOLD);
+        SNAPSHOT_SECOND_LINE = Text.translatable("selectWorld.tooltip.snapshot2").formatted(Formatting.GOLD);
+        LOCKED_TEXT = Text.translatable("selectWorld.locked").formatted(Formatting.RED);
+        CONVERSION_TOOLTIP = Text.translatable("selectWorld.conversion.tooltip").formatted(Formatting.RED);
+    }
+
     private final WorkspaceScreen parent;
+    private final LoadingEntry loadingEntry;
     @Nullable
     private List<Project> levels;
     private String search;
-    private final LoadingEntry loadingEntry;
 
     public WorkspaceListWidget(WorkspaceScreen parent, MinecraftClient client, int width, int height, int top, int bottom, int itemHeight, String search, @Nullable WorkspaceListWidget oldWidget) {
         super(client, width, height, top, bottom, itemHeight);
@@ -87,7 +79,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
 
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
         List<Project> list = this.tryGet();
-        if(list != this.levels) {
+        if (list != this.levels) {
             this.show(list);
         }
 
@@ -95,7 +87,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     private void show(@Nullable List<Project> levels) {
-        if(levels == null) {
+        if (levels == null) {
             this.showLoadingScreen();
         } else {
             this.showSummaries(this.search, levels);
@@ -105,7 +97,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     public void setSearch(String search) {
-        if(this.levels != null && !search.equals(this.search)) {
+        if (this.levels != null && !search.equals(this.search)) {
             this.showSummaries(search, this.levels);
         }
 
@@ -115,11 +107,9 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     private void showSummaries(String search, List<Project> summaries) {
         this.clearEntries();
         search = search.toLowerCase(Locale.ROOT);
-        Iterator var3 = summaries.iterator();
 
-        while(var3.hasNext()) {
-            Project levelSummary = (Project) var3.next();
-            if(this.shouldShow(search, levelSummary)) {
+        for (Project levelSummary : summaries) {
+            if (this.shouldShow(search, levelSummary)) {
                 this.addEntry(new WorkspaceEntry(this, levelSummary));
             }
         }
@@ -169,7 +159,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     public Optional<WorkspaceEntry> getSelectedAsOptional() {
         Fuse.log("Got it!?");
         Entry entry = this.getSelectedOrNull();
-        if(entry instanceof WorkspaceEntry workspaceEntry) {
+        if (entry instanceof WorkspaceEntry workspaceEntry) {
             return Optional.of(workspaceEntry);
         } else {
             return Optional.empty();
@@ -181,20 +171,11 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     public void appendNarrations(NarrationMessageBuilder builder) {
-        if(this.children().contains(this.loadingEntry)) {
+        if (this.children().contains(this.loadingEntry)) {
             this.loadingEntry.appendNarrations(builder);
         } else {
             super.appendNarrations(builder);
         }
-    }
-
-    static {
-        FROM_NEWER_VERSION_FIRST_LINE = Text.translatable("selectWorld.tooltip.fromNewerVersion1").formatted(Formatting.RED);
-        FROM_NEWER_VERSION_SECOND_LINE = Text.translatable("selectWorld.tooltip.fromNewerVersion2").formatted(Formatting.RED);
-        SNAPSHOT_FIRST_LINE = Text.translatable("selectWorld.tooltip.snapshot1").formatted(Formatting.GOLD);
-        SNAPSHOT_SECOND_LINE = Text.translatable("selectWorld.tooltip.snapshot2").formatted(Formatting.GOLD);
-        LOCKED_TEXT = Text.translatable("selectWorld.locked").formatted(Formatting.RED);
-        CONVERSION_TOOLTIP = Text.translatable("selectWorld.conversion.tooltip").formatted(Formatting.RED);
     }
 
     @Environment(EnvType.CLIENT)
@@ -228,6 +209,17 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     @Environment(EnvType.CLIENT)
+    public abstract static class Entry extends AlwaysSelectedEntryListWidget.Entry<Entry> implements AutoCloseable {
+        public Entry() {
+        }
+
+        public abstract boolean isAvailable();
+
+        public void close() {
+        }
+    }
+
+    @Environment(EnvType.CLIENT)
     public final class WorkspaceEntry extends Entry implements AutoCloseable {
         private static final int field_32435 = 32;
         private static final int field_32436 = 32;
@@ -245,11 +237,6 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         private long time;
 
 
-
-        public Project getProject() {
-            return level;
-        }
-
         public WorkspaceEntry(WorkspaceListWidget levelList, Project level) {
             this.client = levelList.client;
             this.screen = levelList.getParent();
@@ -258,10 +245,14 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
             String var10004 = Util.replaceInvalidChars(string, Identifier::isPathCharacterValid);
         }
 
+        public Project getProject() {
+            return level;
+        }
+
         public void render(MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
             String string = this.level.getName();
             String var10000 = this.level.getName();
-            if(StringUtils.isEmpty(string)) {
+            if (StringUtils.isEmpty(string)) {
                 var10000 = I18n.translate("selectWorld.world");
                 string = var10000 + " " + (index + 1);
             }
@@ -271,7 +262,6 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
             float var10003 = (float) (x + 32 + 3);
             Objects.requireNonNull(this.client.textRenderer);
             var17.draw(matrices, Text.of(level.getLocation()), var10003, (float) (y + 9 + 3), 8421504);
-            var17 = this.client.textRenderer;
             var10003 = (float) (x + 32 + 3);
             Objects.requireNonNull(this.client.textRenderer);
             int var10004 = y + 9;
@@ -280,9 +270,9 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         }
 
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            WorkspaceListWidget.this.setSelected((WorkspaceListWidget.Entry)this);
+            WorkspaceListWidget.this.setSelected(this);
             this.screen.worldSelected(WorkspaceListWidget.this.getSelectedAsOptional().isPresent());
-            if (mouseX - (double)WorkspaceListWidget.this.getRowLeft() <= 32.0) {
+            if (mouseX - (double) WorkspaceListWidget.this.getRowLeft() <= 32.0) {
                 this.play();
                 return true;
             } else if (Util.getMeasuringTimeMs() - this.time < 250L) {
@@ -318,17 +308,6 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         }
 
         public void recreate() {
-        }
-    }
-
-    @Environment(EnvType.CLIENT)
-    public abstract static class Entry extends AlwaysSelectedEntryListWidget.Entry<Entry> implements AutoCloseable {
-        public Entry() {
-        }
-
-        public abstract boolean isAvailable();
-
-        public void close() {
         }
     }
 }

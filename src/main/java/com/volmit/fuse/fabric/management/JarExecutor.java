@@ -23,7 +23,7 @@ public class JarExecutor extends Thread {
         start();
         try {
             join();
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
@@ -37,7 +37,7 @@ public class JarExecutor extends Thread {
         args.add("-jar");
         args.add(jar.getAbsolutePath());
 
-        if(this.args != null) {
+        if (this.args != null) {
             args.addAll(this.args);
         }
 
@@ -45,15 +45,15 @@ public class JarExecutor extends Thread {
         Fuse.log(Fuse.service.getFuseDataFolder().getAbsolutePath());
         try {
             Process p = new ProcessBuilder()
-                .command(args.toArray(new String[0]))
-                .directory(Optional.of(directory).orElse(Fuse.service.getFuseDataFolder()))
-                .start();
+                    .command(args.toArray(new String[0]))
+                    .directory(Optional.of(directory).orElse(Fuse.service.getFuseDataFolder()))
+                    .start();
             Runtime.getRuntime().addShutdownHook(new Thread(p::destroy));
             new ProcessRelogger(p.getInputStream(), false).start();
             new ProcessRelogger(p.getErrorStream(), false).start();
             int code = p.waitFor();
             Fuse.log("Process Exited With Code " + code);
-        } catch(IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

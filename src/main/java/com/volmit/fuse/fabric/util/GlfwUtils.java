@@ -6,7 +6,7 @@ public class GlfwUtils {
     public static boolean isWindowFocused() {
         try {
             return MinecraftClient.getInstance().isWindowFocused();
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             return true;
         }
     }

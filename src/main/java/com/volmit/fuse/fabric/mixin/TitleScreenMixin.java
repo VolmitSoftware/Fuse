@@ -25,13 +25,13 @@ public class TitleScreenMixin extends Screen {
     @Inject(at = @At("RETURN"), method = "initWidgetsNormal")
     private void addCustomButton(int y, int spacingY, CallbackInfo ci) {
         this.addDrawable(new FuseProgressWidget(7, 7, width - 14, 9));
-        this.addDrawableChild(ButtonWidget.builder(Text.of("\u2726"), (button) -> {
-            if(Fuse.service.isReady()) {
+        this.addDrawableChild(ButtonWidget.builder(Text.of("✦"), (button) -> {
+            if (Fuse.service.isReady()) {
                 ServerAddress address = ServerAddress.parse("localhost:24627");
                 ConnectScreen.connect(this, this.client, address, new ServerInfo("Fuse Server", address.toString(), false));
             } else {
                 MinecraftClient.getInstance().getToastManager().add(
-                    new SystemToast(SystemToast.Type.UNSECURE_SERVER_WARNING, Text.of("Fuse"), Text.of("Fuse is not ready yet!")));
+                        new SystemToast(SystemToast.Type.UNSECURE_SERVER_WARNING, Text.of("Fuse"), Text.of("Fuse is not ready yet!")));
             }
         }).dimensions(this.width / 2 + 104, y + spacingY, 20, 20).build());
     }
